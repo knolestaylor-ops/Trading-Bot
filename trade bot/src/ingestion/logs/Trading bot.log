@@ -1,0 +1,146 @@
+2026-09-02 22:34:54,157 - INFO - Fetching account info
+2026-09-02 22:34:54,706 - INFO - Account successfully fetched
+2026-09-02 22:35:06,319 - INFO - Fetching account info
+2026-09-02 22:35:06,874 - INFO - Account successfully fetched
+2026-09-02 22:35:06,875 - INFO - Fetching buying power
+2026-09-02 22:35:06,875 - ERROR - Failed to fetch buying power: 'AlpacaClient' object has no attribute 'account'
+2026-09-02 22:35:30,292 - INFO - Fetching account info
+2026-09-02 22:35:30,855 - INFO - Account successfully fetched
+2026-09-02 22:35:30,855 - INFO - Fetching buying power
+2026-09-02 22:35:30,856 - ERROR - Failed to fetch buying power: 'str' object is not callable
+2026-09-02 22:36:48,223 - INFO - Fetching account info
+2026-09-02 22:36:48,803 - INFO - Account successfully fetched
+2026-09-02 22:36:48,803 - INFO - Fetching buying power
+2026-09-02 22:36:48,803 - INFO - Buying power: 400044.4
+2026-09-09 12:37:16,340 - INFO - Fetching account info
+2026-09-09 12:37:17,107 - INFO - Account successfully fetched
+2026-09-09 12:37:55,530 - INFO - Fetching account info
+2026-09-09 12:37:56,150 - INFO - Account successfully fetched
+2026-09-09 12:37:56,150 - INFO - Fetching buying power
+2026-09-09 12:37:56,150 - INFO - Buying power: 400044.4
+2026-09-09 12:41:46,179 - INFO - Fetching account info
+2026-09-09 12:41:46,725 - INFO - Account successfully fetched
+2026-09-09 12:41:46,726 - INFO - Fetching buying power
+2026-09-09 12:41:46,726 - INFO - Buying power: 400044.4
+2026-09-09 12:41:52,429 - INFO - Fetching account info
+2026-09-09 12:41:52,981 - INFO - Account successfully fetched
+2026-09-09 12:41:52,982 - INFO - Fetching buying power
+2026-09-09 12:41:52,982 - INFO - Buying power: 400044.4
+2026-09-09 12:42:21,714 - INFO - Fetching account info
+2026-09-09 12:42:22,335 - INFO - Account successfully fetched
+2026-09-09 12:42:22,335 - INFO - Fetching buying power
+2026-09-09 12:42:22,335 - INFO - Buying power: 400044.4
+2026-09-09 15:09:14,021 - INFO - Fetching account info
+2026-09-09 15:09:14,444 - INFO - Account successfully fetched
+2026-09-09 15:09:14,445 - INFO - Fetching buying power
+2026-09-09 15:09:14,445 - INFO - Buying power: 400044.4
+2026-09-09 15:09:59,402 - INFO - Fetching account info
+2026-09-09 15:10:04,552 - INFO - {'SPY': {   'ask_exchange': 'V',
+    'ask_price': 762.35,
+    'ask_size': 1480.0,
+    'bid_exchange': 'V',
+    'bid_price': 762.23,
+    'bid_size': 1480.0,
+    'conditions': ['R'],
+    'symbol': 'SPY',
+    'tape': 'B',
+    'timestamp': datetime.datetime(2026, 9, 9, 20, 3, 38, 640726, tzinfo=TzInfo(0))}, 'TLT': {   'ask_exchange': 'V',
+    'ask_price': 81.82,
+    'ask_size': 100.0,
+    'bid_exchange': 'V',
+    'bid_price': 81.56,
+    'bid_size': 100.0,
+    'conditions': ['R'],
+    'symbol': 'TLT',
+    'tape': 'C',
+    'timestamp': datetime.datetime(2026, 9, 9, 20, 59, 59, 25941, tzinfo=TzInfo(0))}, 'GLD': {   'ask_exchange': 'V',
+    'ask_price': 414.37,
+    'ask_size': 40.0,
+    'bid_exchange': 'V',
+    'bid_price': 389.88,
+    'bid_size': 40.0,
+    'conditions': ['R'],
+    'symbol': 'GLD',
+    'tape': 'B',
+    'timestamp': datetime.datetime(2026, 9, 9, 20, 0, 0, 2158, tzinfo=TzInfo(0))}}
+2026-09-09 15:10:11,863 - INFO - {'TLT': {   'ask_exchange': 'V',
+    'ask_price': 81.82,
+    'ask_size': 100.0,
+    'bid_exchange': 'V',
+    'bid_price': 81.56,
+    'bid_size': 100.0,
+    'conditions': ['R'],
+    'symbol': 'TLT',
+    'tape': 'C',
+    'timestamp': datetime.datetime(2026, 9, 9, 20, 59, 59, 25941, tzinfo=TzInfo(0))}, 'GLD': {   'ask_exchange': 'V',
+    'ask_price': 414.37,
+    'ask_size': 40.0,
+    'bid_exchange': 'V',
+    'bid_price': 389.88,
+    'bid_size': 40.0,
+    'conditions': ['R'],
+    'symbol': 'GLD',
+    'tape': 'B',
+    'timestamp': datetime.datetime(2026, 9, 9, 20, 0, 0, 2158, tzinfo=TzInfo(0))}, 'SPY': {   'ask_exchange': 'V',
+    'ask_price': 762.35,
+    'ask_size': 1480.0,
+    'bid_exchange': 'V',
+    'bid_price': 762.23,
+    'bid_size': 1480.0,
+    'conditions': ['R'],
+    'symbol': 'SPY',
+    'tape': 'B',
+    'timestamp': datetime.datetime(2026, 9, 9, 20, 3, 38, 640726, tzinfo=TzInfo(0))}}
+2026-09-09 15:34:56,390 - INFO - {'GLD': {   'ask_exchange': 'V',
+    'ask_price': 414.37,
+    'ask_size': 40.0,
+    'bid_exchange': 'V',
+    'bid_price': 389.88,
+    'bid_size': 40.0,
+    'conditions': ['R'],
+    'symbol': 'GLD',
+    'tape': 'B',
+    'timestamp': datetime.datetime(2026, 9, 9, 20, 0, 0, 2158, tzinfo=TzInfo(0))}, 'SPY': {   'ask_exchange': 'V',
+    'ask_price': 762.35,
+    'ask_size': 1480.0,
+    'bid_exchange': 'V',
+    'bid_price': 762.23,
+    'bid_size': 1480.0,
+    'conditions': ['R'],
+    'symbol': 'SPY',
+    'tape': 'B',
+    'timestamp': datetime.datetime(2026, 9, 9, 20, 3, 38, 640726, tzinfo=TzInfo(0))}, 'TLT': {   'ask_exchange': 'V',
+    'ask_price': 81.82,
+    'ask_size': 100.0,
+    'bid_exchange': 'V',
+    'bid_price': 81.56,
+    'bid_size': 100.0,
+    'conditions': ['R'],
+    'symbol': 'TLT',
+    'tape': 'C',
+    'timestamp': datetime.datetime(2026, 9, 9, 20, 59, 59, 25941, tzinfo=TzInfo(0))}}
+2026-09-09 15:35:13,551 - INFO - Fetching account info
+2026-09-09 15:35:13,840 - INFO - Account successfully fetched
+2026-09-09 15:35:13,841 - INFO - Fetching buying power
+2026-09-09 15:35:13,841 - INFO - Buying power: 400044.4
+2026-09-10 00:15:22,060 - INFO - Fetching account info
+2026-09-10 00:15:22,115 - INFO - Account successfully fetched
+2026-09-10 00:15:22,116 - INFO - Fetching buying power
+2026-09-10 00:15:22,116 - INFO - Buying power: 400044.4
+2026-09-15 18:06:20,547 - INFO - Fetching account info
+2026-09-15 18:06:20,599 - INFO - Account successfully fetched
+2026-09-15 18:06:20,600 - INFO - Fetching buying power
+2026-09-15 18:06:20,602 - INFO - Buying power: 400044.4
+2026-09-18 11:22:01,457 - INFO - running get_account
+2026-09-18 11:22:01,459 - INFO - running get_account
+2026-09-18 11:43:36,661 - INFO - running get_account
+2026-09-18 11:43:36,662 - INFO - running get_account
+2026-09-18 11:43:37,584 - INFO - safe_api_call finished
+2026-09-18 11:44:16,750 - INFO - running get_account
+2026-09-18 11:44:16,751 - INFO - running get_account, attempt 1 of 3
+2026-09-18 11:44:17,515 - INFO - safe_api_call finished
+2026-09-18 11:45:03,520 - INFO - running get_account, attempt 1 of 3
+2026-09-18 11:45:04,190 - INFO - safe_api_call finished
+2026-09-18 11:46:21,464 - INFO - running get_account, attempt 1 of 3
+2026-09-18 11:46:21,464 - INFO - Fetching account
+2026-09-18 11:46:22,305 - INFO - safe_api_call finished

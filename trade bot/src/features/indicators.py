@@ -1,0 +1,1 @@
+# SMA, EMA, RSI, MAC, ATR, etc.

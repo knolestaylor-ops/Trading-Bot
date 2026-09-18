@@ -1,0 +1,257 @@
+# REST/Websocket client for Alpaca
+import pandas as pd
+from utils.config_loader import logger
+from utils.decorators import retry, safe_api_call
+from alpaca.trading.client import TradingClient
+from alpaca.trading.requests import GetAssetsRequest, MarketOrderRequest, GetOrdersRequest
+from alpaca.trading.enums import AssetClass, OrderSide, TimeInForce, QueryOrderStatus
+
+
+"""
+1. Configuration
+API key + secret (loaded from environment variables)
+Optional: logging setup
+
+2. REST Client Initialization
+Handles:
+Account info
+Submit orders
+Get positions
+Cancel orders
+Get assets
+
+3. Market Data Client (optional but recommended)
+For pulling:
+Historical OHLCV
+Latest quotes
+Bars for training data
+
+4. Helper Functions
+submit_market_order()
+get_latest_price()
+stream_prices()
+on_trade_update()
+5. A single exported object
+
+Account
+
+
+
+
+
+get_activities
+get_account_config
+update_account_config
+
+Market
+get_clock
+is_market_open
+get_calendar
+Assets
+get_asset(symbol)
+list_assets
+tradable_assets
+validate_symbol(symbol)
+Positions
+get_all_positions
+get_position(symbol)
+close_position(symbol)
+close_all_positions
+Orders
+submit_order
+cancel_order
+cancel_all_orders
+replace_order
+get_orders
+get_order_by_id
+Helpers
+safe_submit_order
+safe_close_position
+safe_get_position
+log_errors
+"""
+
+
+api_key = "PKOZXTHYCD7VTBXATV5WOBVDCB"
+api_secret = "8MMU6kSyGfebWUYmZYKNQkegNfPhMqRS1QkPBTh7JoQ6"
+
+
+class AlpacaClient:
+    def __init__(self):
+        self.trading_client = TradingClient(api_key=api_key, secret_key=api_secret, paper=True)
+
+    @safe_api_call
+    @retry
+    def get_account(self):
+        return self.trading_client.get_account()
+
+    def get_buying_power(self,   account):
+        logger.info("Fetching buying power")
+
+        try:
+            buying_power = account.buying_power
+            logger.info(f"Buying power: {buying_power}")
+
+            return buying_power
+
+        except Exception as e:
+            logger.error(f"Failed to fetch buying power: {e}")
+            raise
+
+    def get_equity(self):
+        logger.info("Fetching equity")
+
+        try:
+            equity = self.account.equity
+            logger.info(f"Equity: {equity}")
+
+            return equity
+
+        except Exception as e:
+            logger.error(f"Failed to fetch equity: {e}")
+            raise
+
+    def get_balance_change(self):
+        logger.info("Fetching balance change")
+
+        try:
+            balance_change = float(self.account.equity) - float(self.account.last_equity)
+            logger.info(f" Portfolio balance change: {balance_change}")
+
+            return balance_change
+
+        except Exception as e:
+            logger.error(f"Failed to fetch balance change: {e}")
+            raise
+
+    def get_cash(self):
+        logger.info("Fetching cash")
+
+        try:
+            cash = self.account.cash
+            logger.info(f"Cash: {cash}")
+
+            return cash
+
+        except Exception as e:
+            logger.error(f"Failed to fetch cash: {e}")
+            raise
+
+
+    def get_portfolio_history(self):
+        try:
+            return self.trading_client.get_portfolio_history()
+
+        except Exception as e:
+            logger.error(f"Failed to fetch portfolio history: {e}")
+            raise
+
+    def get_portfolio_history_table(self):
+        portfolio_history = self.get_portfolio_history()
+        df = pd.DataFrame({
+            "timestamp": portfolio_history.timestamp,
+            "equity": portfolio_history.equity,
+            "profit_loss": portfolio_history.profit_loss,
+            "profit_loss_pct": portfolio_history.profit_loss_pct
+        })
+
+        # Convert timestamps to readable datetime
+        df["timestamp"] = pd.to_datetime(df["timestamp"], unit="s")
+
+        return df
+
+
+    def list_assets(self):
+        logger.info("Listing assets")
+
+        try:
+            search_params = GetAssetsRequest(asset_class=AssetClass.US_EQUITY)
+            assets = self.trading_client.get_all_assets(search_params)
+
+            logger.info(f"assets found: {len(assets)}")
+            logger.info(f"assets: {assets}")
+
+            return assets
+
+        except Exception as e:
+            logger.error(f"Failed to list assets: {e}")
+            raise
+
+    def tradable_assets(self, assets):
+        for asset in assets:
+            if asset.tradable:
+                logger.info(f"Tradable assets: {asset}")
+
+    def prep_order(self):
+        logger.info("Preparing order")
+
+        try:
+            market_order_data = MarketOrderRequest(symbol="AAPL", qty=1, side=OrderSide.BUY, time_in_force=TimeInForce.DAY)
+            logger.info(f"Market order: {market_order_data}")
+
+            return market_order_data
+
+        except Exception as e:
+            logger.error(f"Failed to prepare order: {e}")
+            raise
+
+    def place_market_order(self, market_order_data):
+        logger.info("Placing market order")
+
+        try:
+            market_order = self.trading_client.submit_order(order_data=market_order_data)
+            logger.info(f"Market order: {market_order}")
+            return market_order
+
+        except Exception as e:
+            logger.error(f"Failed to place market order: {e}")
+            raise
+
+    def prepare_sell_order(self):
+        logger.info("Preparing sell order")
+
+        try:
+            sell_order_data = MarketOrderRequest(symbol="AAPL", qty=1, side=OrderSide.SELL, time_in_force=TimeInForce.GTC)
+            logger.info(f"Sell order: {sell_order_data}")
+
+            return sell_order_data
+
+        except Exception as e:
+            logger.error(f"Failed to prepare sell order: {e}")
+            raise
+
+
+    def sell_order(self, sell_order_data):
+        logger.info("Selling order")
+
+        try:
+            response = self.trading_client.submit_order(order_data=sell_order_data)
+            logger.info(f"Sell order: {response}")
+
+            return response
+
+        except Exception as e:
+            logger.error(f"Failed to sell order: {e}")
+            raise
+
+    def liquidate_order(self):
+        pass
+
+    def see_orders(self):
+        logger.info("Seeing orders")
+
+        try:
+            get_orders_data = GetOrdersRequest(status=QueryOrderStatus.OPEN, limit=100, nested=True)
+            orders = self.trading_client.get_orders(filter=get_orders_data)
+            logger.info(f"Orders found: {len(orders)}")
+            logger.info(f"Orders: {orders}")
+
+        except Exception as e:
+            logger.error(f"Failed to get orders: {e}")
+            raise
+
+
+alpaca_client = AlpacaClient()
+
+alpaca_client.get_account()
+
