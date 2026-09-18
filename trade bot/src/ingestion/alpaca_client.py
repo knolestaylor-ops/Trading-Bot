@@ -1,5 +1,6 @@
 # REST/Websocket client for Alpaca
 import pandas as pd
+import requests
 from utils.config_loader import logger
 from utils.decorators import retry, safe_api_call
 from alpaca.trading.client import TradingClient
@@ -78,73 +79,65 @@ api_secret = "8MMU6kSyGfebWUYmZYKNQkegNfPhMqRS1QkPBTh7JoQ6"
 
 class AlpacaClient:
     def __init__(self):
+        self.key = api_key
+        self.secret = api_secret
         self.trading_client = TradingClient(api_key=api_key, secret_key=api_secret, paper=True)
+        self.session = requests.Session()
+        self.session.headers.update({
+            "APCA-API-KEY-ID": self.key,
+            "APCA-API-SECRET-KEY": self.secret})
 
-    @safe_api_call
+        self.base_url = "https://paper-api.alpaca.com"
+
     @retry
-    def get_account(self):
-        return self.trading_client.get_account()
+    @safe_api_call
+    def _request(self, method: str, endpoint: str, **kwargs):
+        """
+        Internal reliability gateway for all Alpaca REST calls.
+        Handles:
+        - URL building
+        - HTTP request dispatch
+        - JSON parsing
+        - Error raising (caught by decorators)
+        """
 
-    def get_buying_power(self,   account):
-        logger.info("Fetching buying power")
+        # 1. Build full URL
+        url = f"{self.base_url}{endpoint}"
 
+
+        response = self.session.request(method, url, **kwargs)
+
+        # 3. Raise HTTP errors (safe_api_call will catch these)
+        response.raise_for_status()
+
+        # 4. Parse JSON (safe_api_call will catch JSON errors)
         try:
-            buying_power = account.buying_power
-            logger.info(f"Buying power: {buying_power}")
+            data = response.json()
+        except ValueError:
+            raise ValueError("Failed to parse JSON response from Alpaca")
 
-            return buying_power
+        # 5. Return parsed JSON to public methods
+        return data
 
-        except Exception as e:
-            logger.error(f"Failed to fetch buying power: {e}")
-            raise
+
+    def get_account(self):
+        return self._request("GET", "/v2/account")
+
+    def get_buying_power(self):
+        return self._request("GET", "/v2/buying_power")
 
     def get_equity(self):
-        logger.info("Fetching equity")
+        return self._request("GET", "/v2/equity")
 
-        try:
-            equity = self.account.equity
-            logger.info(f"Equity: {equity}")
+    def get_balance_change(self, account):
+        return float(account.equity) - float(account.last_equity)
 
-            return equity
-
-        except Exception as e:
-            logger.error(f"Failed to fetch equity: {e}")
-            raise
-
-    def get_balance_change(self):
-        logger.info("Fetching balance change")
-
-        try:
-            balance_change = float(self.account.equity) - float(self.account.last_equity)
-            logger.info(f" Portfolio balance change: {balance_change}")
-
-            return balance_change
-
-        except Exception as e:
-            logger.error(f"Failed to fetch balance change: {e}")
-            raise
-
-    def get_cash(self):
-        logger.info("Fetching cash")
-
-        try:
-            cash = self.account.cash
-            logger.info(f"Cash: {cash}")
-
-            return cash
-
-        except Exception as e:
-            logger.error(f"Failed to fetch cash: {e}")
-            raise
+    def get_cash(self, account):
+        return self._request("GET", "/v2/cash", params={"account": account})
 
 
     def get_portfolio_history(self):
-        try:
-            return self.trading_client.get_portfolio_history()
-
-        except Exception as e:
-            logger.error(f"Failed to fetch portfolio history: {e}")
-            raise
+        return self._request("GET", "/v2/portfolio_history")
 
     def get_portfolio_history_table(self):
         portfolio_history = self.get_portfolio_history()
@@ -253,5 +246,6 @@ class AlpacaClient:
 
 alpaca_client = AlpacaClient()
 
-alpaca_client.get_account()
+account = alpaca_client.get_account()
+alpaca_client.get_buying_power(account)
 

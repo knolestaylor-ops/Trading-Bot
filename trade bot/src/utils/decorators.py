@@ -16,6 +16,7 @@ def retry(func):
             try:
                 logger.info(f"running {func.__name__}, attempt {i+1} of 3")
                 result = func(*args, **kwargs)
+                logger.info(f"result of {func.__name__}: {result}")
                 time.sleep(.3)
                 return result
 
