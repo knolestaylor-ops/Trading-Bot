@@ -10,9 +10,6 @@ from alpaca.trading.enums import AssetClass, OrderSide, TimeInForce, QueryOrderS
 
 
 """
-1. Configuration
-API key + secret (loaded from environment variables)
-Optional: logging setup
 
 2. REST Client Initialization
 Handles:
