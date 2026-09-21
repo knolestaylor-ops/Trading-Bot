@@ -1,6 +1,7 @@
 # REST/Websocket client for Alpaca
 import pandas as pd
 import requests
+import os
 from utils.config_loader import logger
 from utils.decorators import retry, safe_api_call
 from alpaca.trading.client import TradingClient
@@ -73,8 +74,8 @@ log_errors
 """
 
 
-api_key = "PKOZXTHYCD7VTBXATV5WOBVDCB"
-api_secret = "8MMU6kSyGfebWUYmZYKNQkegNfPhMqRS1QkPBTh7JoQ6"
+api_key = os.getenv("API_KEY")
+api_secret = os.getenv("API_SECRET")
 
 
 class AlpacaClient:
@@ -123,11 +124,11 @@ class AlpacaClient:
     def get_account(self):
         return self._request("GET", "/v2/account")
 
-    def get_buying_power(self):
-        return self._request("GET", "/v2/buying_power")
+    def get_buying_power(self, account):
+        return float(account["buying_power"])
 
     def get_equity(self):
-        return self._request("GET", "/v2/equity")
+        return float(account["buying_power"])
 
     def get_balance_change(self, account):
         return float(account.equity) - float(account.last_equity)
@@ -155,20 +156,8 @@ class AlpacaClient:
 
 
     def list_assets(self):
-        logger.info("Listing assets")
+        return self._request("GET", "/v2/assets")
 
-        try:
-            search_params = GetAssetsRequest(asset_class=AssetClass.US_EQUITY)
-            assets = self.trading_client.get_all_assets(search_params)
-
-            logger.info(f"assets found: {len(assets)}")
-            logger.info(f"assets: {assets}")
-
-            return assets
-
-        except Exception as e:
-            logger.error(f"Failed to list assets: {e}")
-            raise
 
     def tradable_assets(self, assets):
         for asset in assets:
@@ -245,7 +234,6 @@ class AlpacaClient:
 
 
 alpaca_client = AlpacaClient()
-
 account = alpaca_client.get_account()
-alpaca_client.get_buying_power(account)
+
 
