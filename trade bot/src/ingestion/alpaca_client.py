@@ -112,6 +112,15 @@ class AlpacaClient:
     def get_account(self):
         return self._request("GET", "/v2/account")
 
+    def get_account_config(self):
+        return self._request("GET", "/v2/account/configurations")
+
+    def patch_account_config(self):
+        return self._request("PATCH", "/v2/account/configurations")
+
+    def get_account_activities(self):
+        return self._request("GET", "/v2/account/activities")
+
     def get_buying_power(self, account):
         return float(account["buying_power"])
 
@@ -194,13 +203,15 @@ class AlpacaClient:
     def sell_order(self, payload):
         return self._request("POST", "/v2/market_orders", json=payload)
 
-    def liquidate_order(self):
-
-
+    def liquidate_order(self, payload):
         return self._request("DELETE", f"/v2/positions", json=payload)
 
     def see_orders(self):
         return self._request("GET", "/v2/orders")
+
+    def market_open(self):
+        return self._request("GET", "/v2/market_orders")
+
 
 
 alpaca_client = AlpacaClient()
