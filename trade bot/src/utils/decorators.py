@@ -15,18 +15,17 @@ def retry(func):
         for i in range(3):
             try:
                 logger.info(f"running {func.__name__}, attempt {i+1} of 3")
-                result = func(*args, **kwargs)
-                logger.info(f"result of {func.__name__}: {result}")
-                time.sleep(.3)
-                return result
+                return func(*args, **kwargs)
 
             except RetryableError as e:
                 last_error = str(e)
                 logger.error(f"Error caused: {last_error}")
+                sleep_time = 0.3 * (2 ** i)
                 logger.info(f"retrying {func.__name__}, (attempt {i+1} of 3)")
+                time.sleep(sleep_time)
                 continue
 
-        logger.info(f"failed {func.__name__}")
+        logger.error(f"failed {func.__name__}")
         raise RetriesExhaustedError(f"{func.__name__} failed after 3 attempts",
                                     context = {"last_error": str(last_error), "attempts": 3})
     return wrapper

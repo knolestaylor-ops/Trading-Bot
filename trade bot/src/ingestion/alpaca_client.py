@@ -2,11 +2,12 @@
 import pandas as pd
 import requests
 import os
+from errors.retryable import *
+from errors.unretryable import *
 from utils.config_loader import logger
 from utils.decorators import retry, safe_api_call
 from alpaca.trading.client import TradingClient
-from alpaca.trading.requests import GetAssetsRequest, MarketOrderRequest, GetOrdersRequest
-from alpaca.trading.enums import AssetClass, OrderSide, TimeInForce, QueryOrderStatus
+
 
 
 """
@@ -71,8 +72,8 @@ log_errors
 """
 
 
-api_key = os.getenv("API_KEY")
-api_secret = os.getenv("API_SECRET")
+api_key = str(os.getenv("API_KEY"))
+api_secret = str(os.getenv("API_SECRET"))
 
 
 class AlpacaClient:
@@ -81,42 +82,32 @@ class AlpacaClient:
         self.secret = api_secret
         self.trading_client = TradingClient(api_key=api_key, secret_key=api_secret, paper=True)
         self.session = requests.Session()
-        self.session.headers.update({
-            "APCA-API-KEY-ID": self.key,
-            "APCA-API-SECRET-KEY": self.secret})
+        self.session.headers.update({"APCA-API-KEY-ID": self.key, "APCA-API-SECRET-KEY": self.secret})
 
         self.base_url = "https://paper-api.alpaca.com"
+        self.logger = logger
 
     @retry
     @safe_api_call
     def _request(self, method: str, endpoint: str, **kwargs):
-        """
-        Internal reliability gateway for all Alpaca REST calls.
-        Handles:
-        - URL building
-        - HTTP request dispatch
-        - JSON parsing
-        - Error raising (caught by decorators)
-        """
 
-        # 1. Build full URL
+        self.logger.debug(f"Requesting {method} {endpoint}  kwargs = {kwargs}")
         url = f"{self.base_url}{endpoint}"
 
-
         response = self.session.request(method, url, **kwargs)
+        self.logger.debug(f"RESPONSE: {response.status_code}, {response.text}")
 
-        # 3. Raise HTTP errors (safe_api_call will catch these)
         response.raise_for_status()
 
-        # 4. Parse JSON (safe_api_call will catch JSON errors)
+        if not response.text:
+            return None
+
         try:
             data = response.json()
         except ValueError:
             raise ValueError("Failed to parse JSON response from Alpaca")
 
-        # 5. Return parsed JSON to public methods
         return data
-
 
     def get_account(self):
         return self._request("GET", "/v2/account")
@@ -125,7 +116,7 @@ class AlpacaClient:
         return float(account["buying_power"])
 
     def get_equity(self):
-        return float(account["buying_power"])
+        return float(account["equity"])
 
     def get_balance_change(self, account):
         return float(account.equity) - float(account.last_equity)
@@ -161,73 +152,55 @@ class AlpacaClient:
             if asset.tradable:
                 logger.info(f"Tradable assets: {asset}")
 
-    def prep_order(self):
-        logger.info("Preparing order")
+    def prep_payload_buy(self, symbol, side = "buy", qty=None, notional=None, time_in_force="day", type="market"):
+        logger.info("Preparing payload")
+        payload = {
+                "symbol": symbol,
+                "side": side,
+                "time_in_force": time_in_force,
+                "type": type
+            }
 
-        try:
-            market_order_data = MarketOrderRequest(symbol="AAPL", qty=1, side=OrderSide.BUY, time_in_force=TimeInForce.DAY)
-            logger.info(f"Market order: {market_order_data}")
+        if qty is not None:
+            payload["qty"] = str(qty)
+        elif notional is not None:
+            payload["notional"] = str(notional)
+        else:
+            raise DataError("Must provide either qty or notional")
 
-            return market_order_data
+        return payload
 
-        except Exception as e:
-            logger.error(f"Failed to prepare order: {e}")
-            raise
+    def place_market_order(self, payload):
+        return self._request("POST", "/v2/market_orders", json=payload)
 
-    def place_market_order(self, market_order_data):
-        logger.info("Placing market order")
+    def prepare_sell_order(self, symbol, side = "sell", qty = None, notional = None, time_in_force = "day", type="market"):
+        logger.info("Preparing payload")
+        payload = {
+            "symbol": symbol,
+            "side": side,
+            "time_in_force": time_in_force,
+            "type": type
+        }
 
-        try:
-            market_order = self.trading_client.submit_order(order_data=market_order_data)
-            logger.info(f"Market order: {market_order}")
-            return market_order
+        if qty is not None:
+            payload["qty"] = str(qty)
+        elif notional is not None:
+            payload["notional"] = str(notional)
+        else:
+            raise DataError("Must provide either qty or notional")
 
-        except Exception as e:
-            logger.error(f"Failed to place market order: {e}")
-            raise
+        return payload
 
-    def prepare_sell_order(self):
-        logger.info("Preparing sell order")
-
-        try:
-            sell_order_data = MarketOrderRequest(symbol="AAPL", qty=1, side=OrderSide.SELL, time_in_force=TimeInForce.GTC)
-            logger.info(f"Sell order: {sell_order_data}")
-
-            return sell_order_data
-
-        except Exception as e:
-            logger.error(f"Failed to prepare sell order: {e}")
-            raise
-
-
-    def sell_order(self, sell_order_data):
-        logger.info("Selling order")
-
-        try:
-            response = self.trading_client.submit_order(order_data=sell_order_data)
-            logger.info(f"Sell order: {response}")
-
-            return response
-
-        except Exception as e:
-            logger.error(f"Failed to sell order: {e}")
-            raise
+    def sell_order(self, payload):
+        return self._request("POST", "/v2/market_orders", json=payload)
 
     def liquidate_order(self):
-        pass
+
+
+        return self._request("DELETE", f"/v2/positions", json=payload)
 
     def see_orders(self):
-        logger.info("Seeing orders")
-
-        try:
-            get_orders_data = GetOrdersRequest(status=QueryOrderStatus.OPEN, limit=100, nested=True)
-            orders = self.trading_client.get_orders(filter=get_orders_data)
-            logger.info(f"Orders found: {len(orders)}")
-            logger.info(f"Orders: {orders}")
-
-        except Exception as e:
-            logger.error(f"Failed to get orders: {e}")
-            raise
+        return self._request("GET", "/v2/orders")
 
 
 alpaca_client = AlpacaClient()
