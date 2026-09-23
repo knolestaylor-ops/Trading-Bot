@@ -33,15 +33,6 @@ stream_prices()
 on_trade_update()
 5. A single exported object
 
-Account
-
-
-
-
-
-get_activities
-get_account_config
-update_account_config
 
 Market
 get_clock
@@ -52,11 +43,7 @@ get_asset(symbol)
 list_assets
 tradable_assets
 validate_symbol(symbol)
-Positions
-get_all_positions
-get_position(symbol)
-close_position(symbol)
-close_all_positions
+
 Orders
 submit_order
 cancel_order
@@ -78,6 +65,11 @@ api_secret = str(os.getenv("API_SECRET"))
 
 class AlpacaClient:
     def __init__(self):
+
+        # ---------------------------------------------------------------------
+        # Section: Initialization
+        # ---------------------------------------------------------------------
+
         self.key = api_key
         self.secret = api_secret
         self.trading_client = TradingClient(api_key=api_key, secret_key=api_secret, paper=True)
@@ -87,6 +79,10 @@ class AlpacaClient:
         self.base_url = "https://paper-api.alpaca.com"
         self.logger = logger
 
+    # ---------------------------------------------------------------------
+    # Section: Requests
+    # ---------------------------------------------------------------------
+
     @retry
     @safe_api_call
     def _request(self, method: str, endpoint: str, **kwargs):
@@ -94,20 +90,30 @@ class AlpacaClient:
         self.logger.debug(f"Requesting {method} {endpoint}  kwargs = {kwargs}")
         url = f"{self.base_url}{endpoint}"
 
-        response = self.session.request(method, url, **kwargs)
-        self.logger.debug(f"RESPONSE: {response.status_code}, {response.text}")
+        try:
+            response = self.session.request(method, url, **kwargs)
+            self.logger.debug(f"RESPONSE: {response.status_code}, {response.text}")
+        except (requests.ConnectionError, requests.Timeout) as e:
+            raise RetryableError(f"Network issue: {e}")
 
-        response.raise_for_status()
+        if  500 <= response.status_code < 600:
+            raise RetryableError(f"Server error: {response.status_code}: {response.text} ")
+
+        if 400 <= response.status_code < 500:
+            raise UnretryableError(f"Client error: {response.status_code}: {response.text} ")
 
         if not response.text:
             return None
 
         try:
             data = response.json()
+
         except ValueError:
             raise ValueError("Failed to parse JSON response from Alpaca")
 
         return data
+
+    # === Account ===
 
     def get_account(self):
         return self._request("GET", "/v2/account")
@@ -118,8 +124,13 @@ class AlpacaClient:
     def patch_account_config(self):
         return self._request("PATCH", "/v2/account/configurations")
 
+    # === activities ===
+
     def get_account_activities(self):
         return self._request("GET", "/v2/account/activities")
+
+    def filter_account_activities(self, activity_type):
+        return self._request("GET", f"/v2/account/activities/{activity_type}")
 
     def get_buying_power(self, account):
         return float(account["buying_power"])
@@ -133,6 +144,7 @@ class AlpacaClient:
     def get_cash(self, account):
         return self._request("GET", "/v2/cash", params={"account": account})
 
+    # === Portfolio ===
 
     def get_portfolio_history(self):
         return self._request("GET", "/v2/portfolio_history")
@@ -151,15 +163,17 @@ class AlpacaClient:
 
         return df
 
+    # === Assets ===
 
     def list_assets(self):
         return self._request("GET", "/v2/assets")
-
 
     def tradable_assets(self, assets):
         for asset in assets:
             if asset.tradable:
                 logger.info(f"Tradable assets: {asset}")
+
+    # === Orders ===
 
     def prep_payload_buy(self, symbol, side = "buy", qty=None, notional=None, time_in_force="day", type="market"):
         logger.info("Preparing payload")
@@ -194,7 +208,7 @@ class AlpacaClient:
         if qty is not None:
             payload["qty"] = str(qty)
         elif notional is not None:
-            payload["notional"] = str(notional)
+            payload["   notional"] = str(notional)
         else:
             raise DataError("Must provide either qty or notional")
 
@@ -209,8 +223,67 @@ class AlpacaClient:
     def see_orders(self):
         return self._request("GET", "/v2/orders")
 
-    def market_open(self):
-        return self._request("GET", "/v2/market_orders")
+    # === Calendar ===
+
+    def get_US_market_calendar(self):
+        return self._request("GET", "/v2/calendar")
+
+    def get_clock(self):
+        return self._request("GET", "/v2/clock")
+
+    # === Positions ===
+
+    def get_open_positions(self):
+        return self._request("GET", "/v2/positions")
+
+    def close_all_positions(self):
+        return self._request("DELETE", "/v2/positions")
+
+    def get_position(self, symbol):
+        return self._request("GET", f"/v2/position/{symbol}")
+
+    def close_position(self, symbol):
+        return self._request("DELETE", f"/v2/position/{symbol}")
+
+    def exercise_options_position(self, symbol):
+        return self._request("POST", f"/v2/positions/{symbol}/exercise")
+
+    # === Watchlists ===
+
+    def get_all_watchlists(self):
+        return self._request("GET", "/v2/watchlists")
+
+    def create_watchlist(self):
+        return self._request("POST", "/v2/watchlists")
+
+    def get_watchlist_by_id(self, id):
+        return self._request("GET", f"/v2/watchlists/{id}")
+
+    def update_watchlist_by_id(self, id):
+        return self._request("PUT", f"/v2/watchlists/{id}")
+
+    def add_asset_to_watchlist(self, id):
+        return self._request("POST", f"/v2/watchlists/{id}")
+
+    def delete_watchlist(self, id):
+        return self._request("DELETE", f"/v2/watchlists/{id}")
+
+    def get_watchlist_by_name(self, name):
+        return self._request("GET", f"/v2/watchlists:{name}")
+
+    def update_watchlist_by_name(self, name):
+        return self._request("PUT", f"/v2/watchlists:{name}")
+
+    def add_asset_to_watchlist_by_name(self, name):
+        return self._request("POST", f"/v2/watchlists:{name}")
+
+    def delete_watchlist_by_name(self, name):
+        return self._request("DELETE", f"/v2/watchlists:{name}")
+
+    def delete_symbol_from_watchlist(self, id, symbol):
+        return self._request("DELETE", f"/v2/watchlists/{id}/{symbol}")
+
+    
 
 
 
