@@ -6,55 +6,7 @@ from errors.retryable import *
 from errors.unretryable import *
 from utils.config_loader import logger
 from utils.decorators import retry, safe_api_call
-from alpaca.trading.client import TradingClient
 
-"""
-
-2. REST Client Initialization
-Handles:
-Account info
-Submit orders
-Get positions
-Cancel orders
-Get assets
-
-3. Market Data Client (optional but recommended)
-For pulling:
-Historical OHLCV
-Latest quotes
-Bars for training data
-
-4. Helper Functions
-submit_market_order()
-get_latest_price()
-stream_prices()
-on_trade_update()
-5. A single exported object
-
-
-Market
-get_clock
-is_market_open
-get_calendar
-Assets
-get_asset(symbol)
-list_assets
-tradable_assets
-validate_symbol(symbol)
-
-Orders
-submit_order
-cancel_order
-cancel_all_orders
-replace_order
-get_orders
-get_order_by_id
-Helpers
-safe_submit_order
-safe_close_position
-safe_get_position
-log_errors
-"""
 
 api_key = str(os.getenv("API_KEY"))
 api_secret = str(os.getenv("API_SECRET"))
@@ -64,13 +16,11 @@ class AlpacaClient:
         # ---------------------------------------------------------------------
         # Section: Initialization
         # ---------------------------------------------------------------------
+        ALLOWED_TIFS = {"day", "gtc", "opg", "cls", "ioc", "fok"}
 
         def __init__(self):
-
-
             self.key = api_key
             self.secret = api_secret
-            self.trading_client = TradingClient(api_key=api_key, secret_key=api_secret, paper=True)
             self.session = requests.Session()
             self.session.headers.update({"APCA-API-KEY-ID": self.key, "APCA-API-SECRET-KEY": self.secret})
 
@@ -97,7 +47,10 @@ class AlpacaClient:
             if  500 <= response.status_code < 600:
                 raise RetryableError(f"Server error: {response.status_code}: {response.text} ")
 
-            if 400 <= response.status_code < 500:
+            if response.status_code in (408, 429):
+                raise RetryableError(f"API error: {response.status_code}: {response.text} ")
+
+            elif 400 <= response.status_code < 500:
                 raise UnretryableError(f"Client error: {response.status_code}: {response.text} ")
 
             if not response.text:
@@ -133,14 +86,14 @@ class AlpacaClient:
         def get_buying_power(self, account):
             return float(account["buying_power"])
 
-        def get_equity(self):
+        def get_equity(self, account):
             return float(account["equity"])
 
         def get_balance_change(self, account):
-            return float(account.equity) - float(account.last_equity)
+            return float(account["equity"]) - float(account["last_equity"])
 
         def get_cash(self, account):
-            return self._request("GET", "/v2/cash", params={"account": account})
+            return float(account["cash"])
 
         # === Portfolio ===
 
@@ -150,10 +103,10 @@ class AlpacaClient:
         def get_portfolio_history_table(self):
             portfolio_history = self.get_portfolio_history()
             df = pd.DataFrame({
-                "timestamp": portfolio_history.timestamp,
-                "equity": portfolio_history.equity,
-                "profit_loss": portfolio_history.profit_loss,
-                "profit_loss_pct": portfolio_history.profit_loss_pct
+                "timestamp": portfolio_history["timestamp"],
+                "equity": portfolio_history["equity"],
+                "profit_loss": portfolio_history["profit_loss"],
+                "profit_loss_pct": portfolio_history["profit_loss_pct"]
             })
 
             # Convert timestamps to readable datetime
@@ -188,18 +141,18 @@ class AlpacaClient:
             return self._request("DELETE", "/v2/positions")
 
         def get_position(self, symbol):
-            return self._request("GET", f"/v2/position/{symbol}")
+            return self._request("GET", f"/v2/positions/{symbol}")
 
         def close_position(self, symbol):
-            return self._request("DELETE", f"/v2/position/{symbol}")
+            return self._request("DELETE", f"/v2/positions/{symbol}")
 
         def exercise_options_position(self, symbol):
             return self._request("POST", f"/v2/positions/{symbol}/exercise")
 
-        def get_all_watchlists(self):
-            return self._request("GET", "/v2/watchlists")
+        # === Watchlist ===
 
-        # === Watchlists ===
+        def get_all_watchlist(self):
+            return self._request("GET", "/v2/watchlists")
 
         def create_watchlist(self):
             return self._request("POST", "/v2/watchlists")
@@ -231,75 +184,298 @@ class AlpacaClient:
         def delete_symbol_from_watchlist(self, watchlist_id, symbol):
             return self._request("DELETE", f"/v2/watchlists/{watchlist_id}/{symbol}")
 
-
         # === Orders ===
 
-        def prep_market_buy_payload(self, symbol, side = "buy", qty=None, notional=None, time_in_force="day", type="market"):
-            logger.info("Preparing payload")
+        def prep_market_buy_payload(self, symbol:str, qty=None, notional=None, time_in_force="day"):
+            logger.info("Preparing market buy payload")
+
+            if symbol is None:
+                raise DataError("Must provide symbol")
+
+            if time_in_force is None:
+                raise DataError("Must provide time_in_force")
+
+            if qty is not None and notional is not None:
+                raise DataError("Must provide either qty or notional, not both")
+
+            if qty is None and notional is None:
+                raise DataError("Must provide either qty or notional")
+
             payload = {
-                "symbol": symbol,
-                "side": side,
-                "time_in_force": time_in_force,
-                "type": type
+                "symbol": str(symbol),
+                "side": "buy",
+                "type": "market",
+                "time_in_force": str(time_in_force)
+            }
+
+            if qty is not None and float(qty) > 0:
+                payload["qty"] = str(qty)
+            elif notional is not None and float(notional) > 0:
+                payload["notional"] = str(notional)
+
+            return payload
+
+        def prep_limit_buy_payload(self, symbol:str, qty=None, notional=None, time_in_force="day", limit_price: float):
+            logger.info("Preparing limit buy payload")
+
+            if symbol is None:
+                raise DataError("Must provide symbol")
+
+            if time_in_force is None:
+                raise DataError("Must provide time_in_force")
+
+            if limit_price is None:
+                raise DataError("Must provide limit_price")
+
+            if notional is not None and time_in_force !=  "day":
+                raise DataError("Can only provide notional when time_in_force is day")
+
+            if qty is not None and notional is not None:
+                raise DataError("Must provide either qty or notional, not both")
+
+            if qty is None and notional is None:
+                raise DataError("Must provide either qty or notional")
+
+            payload = {
+                "symbol": str(symbol),
+                "side": "buy",
+                "type": "limit",
+                "time_in_force": str(time_in_force),
+            }
+
+            if qty is not None and float(qty) > 0:
+                payload["qty"] = str(qty)
+            elif notional is not None and float(notional) > 0:
+                payload["notional"] = str(notional)
+
+            if limit_price is not None and float(limit_price) > 0:
+                payload["limit_price"] = str(limit_price)
+
+            return payload
+
+        def prep_stop_buy_payload(self, symbol:str, qty=None, time_in_force="day", stop_price: float):
+            logger.info("Preparing stop buy payload")
+
+            if symbol is None:
+                raise DataError("Must provide symbol")
+
+            if time_in_force is None:
+                raise DataError("Must provide time_in_force")
+
+            if qty is None:
+                raise DataError("Must provide qty, notional not allowed")
+
+            if stop_price is None:
+                raise DataError("Must provide stop_price")
+
+            payload = {
+                "symbol": str(symbol),
+                "side": "buy",
+                "type": "stop",
+                "time_in_force": str(time_in_force),
+
+            }
+
+            if stop_price is not None and float(stop_price) > 0:
+                payload["stop_price"] = str(stop_price)
+            if qty is not None and float(qty) > 0:
+                payload["qty"] = str(qty)
+
+            return payload
+
+        def prep_stop_limit_buy_payload(self, symbol:str, qty=None, time_in_force="day", limit_price:float, stop_price:float):
+            logger.info("Preparing stop limit buy payload")
+
+            if symbol is None:
+                raise DataError("Must provide symbol")
+
+            if time_in_force is None:
+                raise DataError("Must provide time_in_force")
+
+            if qty is None:
+                raise DataError("Must provide qty, notional not allowed")
+
+            if stop_price is None:
+                raise DataError("Must provide stop_price")
+
+            if limit_price is None:
+                raise DataError("Must provide limit_price")
+
+            if stop_price >= limit_price:
+                raise DataError("Stop price must be smaller than limit price")
+
+            payload = {
+                "symbol": str(symbol),
+                "side": "buy",
+                "type": "stop_limit",
+                "time_in_force": str(time_in_force),
+            }
+
+            if float(qty) > 0:
+                payload["qty"] = str(qty)
+
+            if float(stop_price) > 0:
+                payload["stop_price"] = str(stop_price)
+
+            if float(limit_price) > 0:
+                payload["limit_price"] = str(limit_price)
+
+            return payload
+
+        def prep_market_sell_payload(self, symbol: str, qty=None, notional=None, time_in_force="day"):
+            logger.info("Preparing market sell payload")
+
+            if symbol is None:
+                raise DataError("Must provide symbol")
+
+            if time_in_force is None:
+                raise DataError("Must provide time_in_force")
+
+            if qty is not None and notional is not None:
+                raise DataError("Must provide either qty or notional, not both")
+
+            if qty is None and notional is None:
+                raise DataError("Must provide either qty or notional")
+
+            payload = {
+                "symbol": str(symbol),
+                "side": "sell",
+                "type": "market",
+                "time_in_force": str(time_in_force)
+            }
+
+            if qty is not None and float(qty) > 0:
+                payload["qty"] = str(qty)
+            elif notional is not None and float(notional) > 0:
+                payload["notional"] = str(notional)
+
+            return payload
+
+        def prep_limit_sell_payload(self, symbol:str, qty = None, notional = None, time_in_force = "day", limit_price:float):
+            logger.info("Preparing limit sell payload")
+
+            if symbol is None:
+                raise DataError("Must provide symbol")
+
+            if time_in_force is None:
+                raise DataError("Must provide time_in_force")
+
+            if limit_price is None:
+                raise DataError("Must provide limit_price")
+
+            if notional is not None and time_in_force != "day":
+                raise DataError("Can only provide notional when time_in_force is day")
+
+            if qty is not None and notional is not None:
+                raise DataError("Must provide either qty or notional, not both")
+
+            if qty is None and notional is None:
+                raise DataError("Must provide either qty or notional")
+
+            payload = {
+                "symbol": str(symbol),
+                "side": "sell",
+                "type": "limit",
+                "time_in_force": str(time_in_force),
+                "limit_price": str(limit_price)
             }
 
             if qty is not None:
                 payload["qty"] = str(qty)
             elif notional is not None:
                 payload["notional"] = str(notional)
-            else:
-                raise DataError("Must provide either qty or notional")
 
             return payload
 
-        def prep_limit_buy_payload(self, payload):
-            pass
 
-        def prep_stop_buy_payload(self, payload):
-            pass
+    def prep_stop_sell_payload(self, symbol:str, qty = None, time_in_force = "day", stop_price:float):
+        logger.info("Preparing stop sell payload")
 
-        def prep_stop_limit_buy_payload(self, payload):
-            pass
+        if symbol is None:
+            raise DataError("Must provide symbol")
+
+        if time_in_force is None:
+            raise DataError("Must provide time_in_force")
+
+        if qty is None:
+            raise DataError("Must provide qty, notional not allowed")
+
+        if stop_price is None:
+            raise DataError("Must provide stop_price")
+
+        payload = {
+            "symbol": str(symbol),
+            "side": "sell",
+            "type": "stop",
+            "time_in_force": str(time_in_force),
+        }
+
+        if stop_price is not None and float(stop_price) > 0:
+            payload["stop_price"] = str(stop_price)
+
+        if qty is not None and float(qty) > 0:
+            payload["qty"] = str(qty)
+
+        return payload
 
 
-        def prep_market_sell_payload(self, symbol, side = "sell", qty = None, notional = None, time_in_force = "day", type="market"):
-            logger.info("Preparing payload")
-            payload = {
-                "symbol": symbol,
-                "side": side,
-                "time_in_force": time_in_force,
-                "type": type
-            }
+    def prep_stop_limit_sell_payload(self, symbol:str, qty = None, time_in_force = "day", stop_price:float, limit_price:float):
+        logger.info("Preparing stop limit sell payload")
 
-            if qty is not None:
-                payload["qty"] = str(qty)
-            elif notional is not None:
-                payload["notional"] = str(notional)
-            else:
-                raise DataError("Must provide either qty or notional")
+        if symbol is None:
+            raise DataError("Must provide symbol")
 
-            return payload
+        if time_in_force is None:
+            raise DataError("Must provide time_in_force")
 
-        def prep__limit_sell_payload(self, payload):
-            pass
+        if qty is None:
+            raise DataError("Must provide qty, notional not allowed")
 
-        def prep_stop_sell_payload(self, payload):
-            pass
+        if stop_price is None:
+            raise DataError("Must provide stop_price")
 
-        def prep_stop_limit_sell_payload(self, payload):
-            pass
+        if limit_price is None:
+            raise DataError("Must provide limit_price")
 
-        def sell_order(self, payload):
-            return self._request("POST", "/v2/market_orders", json=payload)
+        if limit_price <= 0:
+            raise DataError("Must provide positive limit price")
 
-        def place_market_order(self, payload):
-            return self._request("POST", "/v2/market_orders", json=payload)
+        if stop_price <= 0:
+            raise DataError("Must provide positive stop price")
 
-        def liquidate_order(self, payload):
-            return self._request("DELETE", f"/v2/positions", json=payload)
+        if stop_price <= limit_price:
+            raise DataError("Stop price must be larger than limit price")
 
-        def see_orders(self):
-            return self._request("GET", "/v2/orders")
+        payload = {
+            "symbol": str(symbol),
+            "side": "sell",
+            "type": "stop_limit",
+            "time_in_force": str(time_in_force)
+        }
+
+        if float(qty) > 0:
+            payload["qty"] = str(qty)
+
+        if float(stop_price) > 0:
+            payload["stop_price"] = str(stop_price)
+
+        if float(limit_price) > 0:
+            payload["limit_price"] = str(limit_price)
+
+        return payload
+
+
+    def sell_order(self, payload):
+        return self._request("POST", "/v2/market_orders", json=payload)
+
+    def place_market_order(self, payload):
+        return self._request("POST", "/v2/market_orders", json=payload)
+
+    def liquidate_order(self, symbol):
+        return self._request("DELETE", f"/v2/positions{symbol}")
+
+    def see_orders(self):
+        return self._request("GET", "/v2/orders")
 
 
 alpaca_client = AlpacaClient()
