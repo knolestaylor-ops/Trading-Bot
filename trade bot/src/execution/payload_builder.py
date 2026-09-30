@@ -1,17 +1,37 @@
+
 from utils.config_loader import logger
 from errors.retryable import *
 
 
+# Refactor with helper functions, not neccessary right now, but will help with readability and testing.
 
 
 class PayloadBuilder:
-    def prep_market_buy_payload(self, symbol: str, qty=None, notional=None, time_in_force="day"):
+    ALLOWED_TIFS = {"day", "gtc", "opg", "cls", "ioc", "fok"}
+
+    def _validate_symbol(self, symbol: str):
+        pass
+    def _validate_time_in_force(self, time_in_force: str):
+        pass
+    def _validate_limit_price(self, limit_price: float):
+        pass
+    def _validate_stop_price(self, stop_price: float):
+        pass
+    def _validate_qty(self, qty: float):
+        pass
+    def _validate_notional(self, notional: float):
+        pass
+    def _validate_mutual_exclusive(self, mutual_exclusive: bool):
+        pass
+
+
+    def market_buy(self, symbol: str, time_in_force, qty=None, notional=None):
         logger.info("Preparing market buy payload")
 
         if symbol is None:
             raise DataError("Must provide symbol")
 
-        if time_in_force is None:
+        if time_in_force not in PayloadBuilder.ALLOWED_TIFS:
             raise DataError("Must provide time_in_force")
 
         if qty is not None and notional is not None:
@@ -38,13 +58,13 @@ class PayloadBuilder:
 
         return payload
 
-    def prep_limit_buy_payload(self, symbol: str, qty=None, notional=None, time_in_force="day", limit_price: float):
+    def limit_buy(self, symbol: str, time_in_force, limit_price: float, qty=None, notional=None):
         logger.info("Preparing limit buy payload")
 
         if symbol is None:
             raise DataError("Must provide symbol")
 
-        if time_in_force is None:
+        if time_in_force not in PayloadBuilder.ALLOWED_TIFS:
             raise DataError("Must provide time_in_force")
 
         if limit_price is None:
@@ -82,13 +102,13 @@ class PayloadBuilder:
 
         return payload
 
-    def prep_stop_buy_payload(self, symbol: str, qty=None, time_in_force="day", stop_price: float):
+    def stop_buy(self, symbol: str, time_in_force, stop_price: float, qty=None):
         logger.info("Preparing stop buy payload")
 
         if symbol is None:
             raise DataError("Must provide symbol")
 
-        if time_in_force is None:
+        if time_in_force not in PayloadBuilder.ALLOWED_TIFS:
             raise DataError("Must provide time_in_force")
 
         if qty is None:
@@ -116,14 +136,13 @@ class PayloadBuilder:
 
         return payload
 
-    def prep_stop_limit_buy_payload(self, symbol: str, qty=None, time_in_force="day", limit_price: float,
-                                    stop_price: float):
+    def stop_limit_buy(self, symbol: str,time_in_force, limit_price: float,stop_price: float, qty=None):
         logger.info("Preparing stop limit buy payload")
 
         if symbol is None:
             raise DataError("Must provide symbol")
 
-        if time_in_force is None:
+        if time_in_force not in PayloadBuilder.ALLOWED_TIFS:
             raise DataError("Must provide time_in_force")
 
         if qty is None:
@@ -163,13 +182,13 @@ class PayloadBuilder:
 
         return payload
 
-    def prep_market_sell_payload(self, symbol: str, qty=None, notional=None, time_in_force="day"):
+    def market_sell(self, symbol: str, time_in_force, qty=None, notional=None):
         logger.info("Preparing market sell payload")
 
         if symbol is None:
             raise DataError("Must provide symbol")
 
-        if time_in_force is None:
+        if time_in_force not in PayloadBuilder.ALLOWED_TIFS:
             raise DataError("Must provide time_in_force")
 
         if qty is not None and notional is not None:
@@ -196,13 +215,13 @@ class PayloadBuilder:
 
         return payload
 
-    def prep_limit_sell_payload(self, symbol: str, qty=None, notional=None, time_in_force="day", limit_price: float):
+    def limit_sell(self, symbol: str, time_in_force, limit_price: float, qty=None, notional=None):
         logger.info("Preparing limit sell payload")
 
         if symbol is None:
             raise DataError("Must provide symbol")
 
-        if time_in_force is None:
+        if time_in_force not in PayloadBuilder.ALLOWED_TIFS:
             raise DataError("Must provide time_in_force")
 
         if limit_price is None:
@@ -241,13 +260,13 @@ class PayloadBuilder:
 
         return payload
 
-    def prep_stop_sell_payload(self, symbol: str, qty=None, time_in_force="day", stop_price: float):
+    def stop_sell(self, symbol: str, time_in_force, stop_price: float, qty=None):
         logger.info("Preparing stop sell payload")
 
         if symbol is None:
             raise DataError("Must provide symbol")
 
-        if time_in_force is None:
+        if time_in_force not in PayloadBuilder.ALLOWED_TIFS:
             raise DataError("Must provide time_in_force")
 
         if qty is None:
@@ -274,14 +293,13 @@ class PayloadBuilder:
 
         return payload
 
-    def prep_stop_limit_sell_payload(self, symbol: str, qty=None, time_in_force="day", stop_price: float,
-                                     limit_price: float):
+    def stop_limit_sell(self, symbol: str, time_in_force, limit_price: float,stop_price: float, qty=None):
         logger.info("Preparing stop limit sell payload")
 
         if symbol is None:
             raise DataError("Must provide symbol")
 
-        if time_in_force is None:
+        if time_in_force not in PayloadBuilder.ALLOWED_TIFS:
             raise DataError("Must provide time_in_force")
 
         if qty is None:

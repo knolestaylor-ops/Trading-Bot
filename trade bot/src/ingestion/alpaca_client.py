@@ -17,7 +17,7 @@ class AlpacaClient:
         # ---------------------------------------------------------------------
         # Section: Initialization
         # ---------------------------------------------------------------------
-        ALLOWED_TIFS = {"day", "gtc", "opg", "cls", "ioc", "fok"}
+
 
         def __init__(self):
             self.key = api_key
@@ -42,6 +42,7 @@ class AlpacaClient:
             try:
                 response = self.session.request(method, url, **kwargs)
                 self.logger.debug(f"RESPONSE: {response.status_code}, {response.text}")
+                
             except (requests.ConnectionError, requests.Timeout) as e:
                 raise RetryableError(f"Network issue: {e}")
 
@@ -187,7 +188,7 @@ class AlpacaClient:
 
         # === Orders ===
 
-        def submit_order(self, payload)
+        def submit_order(self, payload):
             return self._request("POST", "/v2/orders", json = payload)
 
         def liquidate_order(self, symbol):
