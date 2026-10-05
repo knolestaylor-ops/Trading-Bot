@@ -22,10 +22,11 @@ class AlpacaClient:
         def __init__(self):
             self.key = api_key
             self.secret = api_secret
-            self.session = requests.Session()
+            self.session = requests.Session() # main request session
             self.session.headers.update({"APCA-API-KEY-ID": self.key, "APCA-API-SECRET-KEY": self.secret})
+            self.base_url = "https://paper-api.alpaca.markets" # base url for all market requests
+            self.historical_url = "https://data.alpaca.markets"# base url for all historical requests
 
-            self.base_url = "https://paper-api.alpaca.markets"
             self.logger = logger
             self.payloads = PayloadBuilder()
         # ---------------------------------------------------------------------
@@ -36,8 +37,16 @@ class AlpacaClient:
         @safe_api_call
         def _request(self, method: str, endpoint: str, **kwargs):
 
+            # FIXME: add url handeling to accept urls from historical data api
+
             self.logger.debug(f"Requesting {method} {endpoint}  kwargs = {kwargs}")
-            url = f"{self.base_url}{endpoint}"
+
+            if :
+                base =
+            else:
+                base =
+                
+            url = base + endpoint
 
             try:
                 response = self.session.request(method, url, **kwargs)

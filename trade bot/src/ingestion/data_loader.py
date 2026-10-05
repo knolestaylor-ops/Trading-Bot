@@ -1,19 +1,32 @@
-# Historical data loader
-import os
-from alpaca.data.historical import StockHistoricalDataClient
-from alpaca.data.requests import StockLatestQuoteRequest
+
 from utils.config_loader import logger
 
-api_key = str(os.getenv("API_KEY"))
-api_secret = str(os.getenv("API_SECRET"))
+class HistoricalDataClient:
 
-client = StockHistoricalDataClient(api_key, api_secret)
+    def __init__(self, client):
+        self._request = client._request # needs to work on the same session as alpaca_client
+        self.logger = logger
 
-# multi symbol request - single symbol is similar
-multisymbol_request_params = StockLatestQuoteRequest(symbol_or_symbols=["SPY", "GLD", "TLT"])
+    def get_historical_bars(self):
+        return self._request("GET", "/v2/stocks/bars")
 
-latest_multisymbol_quotes = client.get_stock_latest_quote(multisymbol_request_params)
-logger.info(latest_multisymbol_quotes)
+    def get_historical_auctions(self):
+        return self._request("GET", "/v2/stocks/auctions")
 
+    def get_historical_quotes(self):
+        return self._request("GET", "/v2/stocks/quotes")
 
+    def get_historical_trades(self):
+        return self._request("GET", "/v2/stocks/trades")
 
+    def get_historical_auction(self, symbol):
+        return self._request("GET", f"/v2/stocks/{symbol}/auctions")
+
+    def get_historical_bar(self, symbol):
+        return self._request("GET", f"/v2/stocks/{symbol}/bars")
+
+    def get_historical_quote(self, symbol):
+        return self._request("GET", f"/v2/stocks/{symbol}/quotes")
+
+    def get_historical_trade(self, symbol):
+        return self._request("GET", f"/v2/stocks/{symbol}/trades")
