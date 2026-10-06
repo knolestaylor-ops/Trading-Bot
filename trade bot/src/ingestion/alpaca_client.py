@@ -20,6 +20,8 @@ class AlpacaClient:
 
 
         def __init__(self):
+            ALLOWED_HISTORICAL_URLS = ["bars", "auctions", "quotes", "trades",]
+
             self.key = api_key
             self.secret = api_secret
             self.session = requests.Session() # main request session
@@ -37,15 +39,15 @@ class AlpacaClient:
         @safe_api_call
         def _request(self, method: str, endpoint: str, **kwargs):
 
-            # FIXME: add url handeling to accept urls from historical data api
-
             self.logger.debug(f"Requesting {method} {endpoint}  kwargs = {kwargs}")
 
-            if :
-                base =
+            last = endpoint.split("/")[-1]
+
+            if last in ALLOWED_HISTORICAL_URLS:
+                base = self.historical_url
             else:
-                base =
-                
+                base = self.base_url
+
             url = base + endpoint
 
             try:
@@ -229,6 +231,7 @@ class AlpacaClient:
 
         def get_snapshot(self, symbol):
             return self._request("GET", f"/v2/stocks/{symbol}/snapshot")
+
 
 alpaca_client = AlpacaClient()
 account = alpaca_client.get_account()
