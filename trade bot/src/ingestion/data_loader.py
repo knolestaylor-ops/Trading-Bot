@@ -1,4 +1,5 @@
-from pandas._config import dates
+
+from alpaca_client import account
 
 from utils.config_loader import logger
 
@@ -80,4 +81,8 @@ class HistoricalDataClient:
 
     def get_historical_trade(self, symbol):
         return self._request("GET", f"/v2/stocks/{symbol}/trades")
+
+
+historical_data_client = HistoricalDataClient(account)
+historical_data_client.get_historical_bar("AAPL")
 
