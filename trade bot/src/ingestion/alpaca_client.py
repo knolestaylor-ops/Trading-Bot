@@ -8,7 +8,7 @@ from utils.config_loader import logger
 from utils.decorators import retry, safe_api_call
 from execution.payload_builder import PayloadBuilder
 
-
+ALLOWED_HISTORICAL_URLS = ["bars", "auctions", "quotes", "trades",]
 api_key = str(os.getenv("API_KEY"))
 api_secret = str(os.getenv("API_SECRET"))
 
@@ -18,10 +18,7 @@ class AlpacaClient:
         # Section: Initialization
         # ---------------------------------------------------------------------
 
-
         def __init__(self):
-            ALLOWED_HISTORICAL_URLS = ["bars", "auctions", "quotes", "trades",]
-
             self.key = api_key
             self.secret = api_secret
             self.session = requests.Session() # main request session
@@ -47,7 +44,6 @@ class AlpacaClient:
                 base = self.historical_url
             else:
                 base = self.base_url
-
             url = base + endpoint
 
             try:
@@ -227,14 +223,12 @@ class AlpacaClient:
             return self._request("GET", f"/v2/stocks/{symbol}/quotes/latest")
 
         def get_bars(self, symbol, timeframe = "1min", limit = 100):
-            return self._request("GET", f"/v2/stocks/{symbol}/bars?timeframe={timeframe}&limit={limit}")
+            return self._request("GET", f"/v2/stocks/{symbol}/bars", json = {"timeframe": timeframe, "limit": limit})
 
         def get_snapshot(self, symbol):
             return self._request("GET", f"/v2/stocks/{symbol}/snapshot")
 
 
 alpaca_client = AlpacaClient()
-account = alpaca_client.get_account()
-
 
 

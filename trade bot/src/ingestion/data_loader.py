@@ -1,5 +1,5 @@
-
-from alpaca_client import account
+import json
+from alpaca_client import alpaca_client
 
 from utils.config_loader import logger
 
@@ -70,19 +70,21 @@ class HistoricalDataClient:
         }
         return self._paginate("GET", "/v2/stocks/trades", params = params)
 
-    def get_historical_auction(self, symbol):
+    def get_historical_auction(self, symbol): # returns all historical auctions for a single symbol
         return self._request("GET", f"/v2/stocks/{symbol}/auctions")
 
-    def get_historical_bar(self, symbol):
+    def get_historical_bar(self, symbol): # returns all historical bars for a single symbol
         return self._request("GET", f"/v2/stocks/{symbol}/bars")
 
-    def get_historical_quote(self, symbol):
+    def get_historical_quote(self, symbol): # returns all historical quotes for a single symbol
         return self._request("GET", f"/v2/stocks/{symbol}/quotes")
 
-    def get_historical_trade(self, symbol):
+    def get_historical_trade(self, symbol): # returns all historical trades for a single symbol
         return self._request("GET", f"/v2/stocks/{symbol}/trades")
 
 
-historical_data_client = HistoricalDataClient(account)
-historical_data_client.get_historical_bar("AAPL")
+historical_data_client = HistoricalDataClient(alpaca_client)
+resp = historical_data_client.get_historical_trade("AAPL")
+
+print(json.dumps(resp, indent=4, sort_keys=True))
 
