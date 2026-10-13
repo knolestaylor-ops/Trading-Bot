@@ -1,6 +1,7 @@
-import os
 import logging
+import os
 from logging.handlers import RotatingFileHandler
+
 
 class Logger:
     def __init__(self, name = "Trading bot", level = logging.INFO, log_dir = "logs"):
