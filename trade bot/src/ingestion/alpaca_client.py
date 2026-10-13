@@ -1,13 +1,13 @@
 # REST/Websocket client for Alpaca
+import os
+
 import pandas as pd
 import requests
-import os
 from errors.retryable import *
 from errors.unretryable import *
+from execution.payload_builder import PayloadBuilder
 from utils.config_loader import logger
 from utils.decorators import retry, safe_api_call
-from execution.payload_builder import PayloadBuilder
-
 
 api_key = str(os.getenv("API_KEY"))
 api_secret = str(os.getenv("API_SECRET"))
@@ -17,10 +17,9 @@ class AlpacaClient:
         # ---------------------------------------------------------------------
         # Section: Initialization
         # ---------------------------------------------------------------------
-
+        ALLOWED_HISTORICAL_URLS = ["bars", "auctions", "quotes", "trades", ]
 
         def __init__(self):
-            ALLOWED_HISTORICAL_URLS = ["bars", "auctions", "quotes", "trades",]
 
             self.key = api_key
             self.secret = api_secret
@@ -39,6 +38,7 @@ class AlpacaClient:
         @safe_api_call
         def _request(self, method: str, endpoint: str, **kwargs):
 
+            global ALLOWED_HISTORICAL_URLS
             self.logger.debug(f"Requesting {method} {endpoint}  kwargs = {kwargs}")
 
             last = endpoint.split("/")[-1]
