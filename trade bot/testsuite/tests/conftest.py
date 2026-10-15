@@ -1,5 +1,5 @@
 import pytest
-from alpaca_client import AlpacaClient
+from ingestion.alpaca_client import AlpacaClient
 
 
 @pytest.fixture
