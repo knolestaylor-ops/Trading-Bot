@@ -1,10 +1,12 @@
-from utils.config_loader import logger
+import functools
+import json
+import time
+
+import requests
 from errors.retryable import *
 from errors.unretryable import *
-import functools
-import time
-import requests
-import json
+from utils.config_loader import logger
+
 
 def retry(func):
     @functools.wraps(func)

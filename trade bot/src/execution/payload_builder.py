@@ -1,6 +1,6 @@
 
-from utils.config_loader import logger
 from errors.retryable import *
+from utils.config_loader import logger
 
 
 # Refactor with helper functions, not neccessary right now, but will help with readability and testing.
