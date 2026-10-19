@@ -1,6 +1,5 @@
 import json
 from alpaca_client import alpaca_client
-
 from utils.config_loader import logger
 
 class HistoricalDataClient:
