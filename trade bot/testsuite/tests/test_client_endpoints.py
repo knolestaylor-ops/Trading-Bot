@@ -1,6 +1,5 @@
 import pytest
 
-
 class DummyResponse:
     def __init__(self, status_code=200, text="", json_data=None):
         self.status_code = status_code
