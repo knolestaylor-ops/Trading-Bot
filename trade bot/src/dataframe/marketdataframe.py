@@ -30,6 +30,9 @@ class MarketDataFrame:
         }
         self.df = pl.DataFrame(schema = self.schema)
 
+    def bar_count(self):
+        return len(self.df)
+
     def df_shape(self):
         return self.df.shape
 
@@ -40,10 +43,10 @@ class MarketDataFrame:
         return self.df.width
 
     def bar_to_df(self, bar: dict) -> pl.DataFrame:
-        return pl.DataFrame([bar]).with_columns([pl.col("timestamp").str.strptime(pl.Datetime("us", "UTC"), strict = True)])
+        return pl.DataFrame([bar]).with_columns([pl.col("timestamp").str.to_datetime(time_unit= "us", time_zone= "UTC")])
 
     def bars_to_df(self, bars: list) -> pl.DataFrame:
-        return pl.DataFrame(bars).with_columns([pl.col("timestamp").str.strptime(pl.Datetime("us", "UTC"), strict = True)])
+        return pl.DataFrame(bars).with_columns([pl.col("timestamp").str.to_datetime(time_unit= "us", time_zone= "UTC")])
 
     def append_bar(self, bar: dict) -> pl.DataFrame:
         new_df = self.bar_to_df(bar)
@@ -51,11 +54,18 @@ class MarketDataFrame:
         return self.df
 
     def append_bars(self, bars: list) -> pl.DataFrame:
+        if not bars:
+            return self.df
+
         new_df = self.bars_to_df(bars)
-        self.df = pl.concat([self.df, new_df], how = "vertical").unique(subset=['timestamp']).sort('timestamp')
+
+        self.df = pl.concat([self.df, new_df], how = "vertical").unique(subset=['timestamp'], keep= "last").sort('timestamp')
         return self.df
 
     def current_timestamp(self):
+        if self.df.is_empty():
+            return None
+
         return self.df.item(self.df.height - 1,0)
 
     def market_price(self):
@@ -82,8 +92,16 @@ class MarketDataFrame:
     def load_parquet(self):
         pass
 
+
+
+
     def validate_bar(self,bar):
-        pass
+        self._validate_fields()
+        self._validate_values()
+        self._validate_types()
+        self._validate_positive()
+        self._validate_relationship()
+
 
 
 
