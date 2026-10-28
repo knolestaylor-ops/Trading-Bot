@@ -33,6 +33,9 @@ class MarketDataFrame:
     def bar_count(self):
         return len(self.df)
 
+    def has_bars(self, count: int) -> bool:
+        return self.bar_count() >= count
+
     def df_shape(self):
         return self.df.shape
 
@@ -93,27 +96,66 @@ class MarketDataFrame:
         pass
 
     def _validate_fields(self, bar):
-        pass
+        required_fields = {
+            "timestamp",
+            "open",
+            "high",
+            "low",
+            "close",
+            "volume"
+        }
 
-    def _validate_types(self, bar):
-        pass
+        # Check required fields
+        missing = required_fields - set(bar.keys())
 
-    def _validate_values(self, bar):
-        pass
+        if missing:
+            raise ValueError(
+                f"Missing required fields: {missing}"
+            )
 
-    def _validate_positive(self, bar):
-        pass
+    def _validate_prices(self, open_price, high_price, low_price, close_price):
 
-    def _validate_relationship(self, bar):
-        pass
+        if open_price <= 0:
+            raise ValueError("Open price must be positive")
 
+        if high_price <= 0:
+            raise ValueError("High price must be positive")
+
+        if low_price <= 0:
+            raise ValueError("Low price must be positive")
+
+        if close_price <= 0:
+            raise ValueError("Close price must be positive")
+
+
+    def _validate_OHCL(self, high_price, low_price, open_price, close_price):
+
+        if high_price < max(open_price, close_price):
+            raise ValueError("High must be greater than or equal to open and close")
+
+        if low_price > min(open_price, close_price):
+            raise ValueError("Low must be less than or equal to open and close")
+
+        if low_price > high_price:
+            raise ValueError("Low cannot be greater than high")
+
+    def _validate_volume(self, volume):
+        if volume < 0:
+            raise ValueError(
+                "Volume cannot be negative"
+            )
     def validate_bar(self,bar):
         self._validate_fields(bar)
-        self._validate_values(bar)
-        self._validate_types(bar)
-        self._validate_positive(bar)
-        self._validate_relationship(bar)
 
+        open_price = float(bar["open"])
+        high_price = float(bar["high"])
+        low_price = float(bar["low"])
+        close_price = float(bar["close"])
+        volume = int(bar["volume"])
+
+        self._validate_prices(open_price, high_price, low_price, close_price)
+        self._validate_OHCLV(high_price, low_price, open_price, close_price)
+        self._validate_volume(volume)
 
 
 
