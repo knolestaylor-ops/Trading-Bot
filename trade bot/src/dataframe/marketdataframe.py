@@ -45,10 +45,23 @@ class MarketDataFrame:
     def df_width(self):
         return self.df.width
 
-    def bar_to_df(self, bar: dict) -> pl.DataFrame:
+    def get_latest_bar(self):
+        return self.df.tail(1)
+
+    def get_latest_bars(self, count: int) -> pl.DataFrame:
+        return self.df.tail(count)
+
+    def bar_to_df(self, unvalidated_bar: dict) -> pl.DataFrame:
+        bar = self.validate_bar(unvalidated_bar)
         return pl.DataFrame([bar]).with_columns([pl.col("timestamp").str.to_datetime(time_unit= "us", time_zone= "UTC")])
 
-    def bars_to_df(self, bars: list) -> pl.DataFrame:
+    def bars_to_df(self, unvalidated_bars: list) -> pl.DataFrame:
+        bars = []
+
+        for unvalidated_bar in unvalidated_bars:
+            bar = self.validate_bar(unvalidated_bar)
+            bars.append(bar)
+
         return pl.DataFrame(bars).with_columns([pl.col("timestamp").str.to_datetime(time_unit= "us", time_zone= "UTC")])
 
     def append_bar(self, bar: dict) -> pl.DataFrame:
@@ -70,30 +83,6 @@ class MarketDataFrame:
             return None
 
         return self.df.item(self.df.height - 1,0)
-
-    def market_price(self):
-        pass
-
-    def highest_high(self):
-        pass
-
-    def lowest_low(self):
-        pass
-
-    def sma(self):
-        pass
-
-    def ema(self):
-        pass
-
-    def resample(self):
-        pass
-
-    def save_parquet(self):
-        pass
-
-    def load_parquet(self):
-        pass
 
     def _validate_fields(self, bar):
         required_fields = {
@@ -154,8 +143,17 @@ class MarketDataFrame:
         volume = int(bar["volume"])
 
         self._validate_prices(open_price, high_price, low_price, close_price)
-        self._validate_OHCLV(high_price, low_price, open_price, close_price)
+        self._validate_OHCL(high_price, low_price, open_price, close_price)
         self._validate_volume(volume)
+
+        return {
+            "timestamp": bar["timestamp"],
+            "open": open_price,
+            "high": high_price,
+            "low": low_price,
+            "close": close_price,
+            "volume": volume
+        }
 
 
 
