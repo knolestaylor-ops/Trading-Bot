@@ -92,15 +92,27 @@ class MarketDataFrame:
     def load_parquet(self):
         pass
 
+    def _validate_fields(self, bar):
+        pass
 
+    def _validate_types(self, bar):
+        pass
 
+    def _validate_values(self, bar):
+        pass
+
+    def _validate_positive(self, bar):
+        pass
+
+    def _validate_relationship(self, bar):
+        pass
 
     def validate_bar(self,bar):
-        self._validate_fields()
-        self._validate_values()
-        self._validate_types()
-        self._validate_positive()
-        self._validate_relationship()
+        self._validate_fields(bar)
+        self._validate_values(bar)
+        self._validate_types(bar)
+        self._validate_positive(bar)
+        self._validate_relationship(bar)
 
 
 
