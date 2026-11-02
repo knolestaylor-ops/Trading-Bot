@@ -1,2 +1,18 @@
 # Trading-Bot
-An in-progress machine learning program that uses Alpaca API paper trading to make trades
+A modular algorithmic trading system built with Python, Polars, and the Alpaca API.
+
+Features:
+Market data ingestion
+Data validation
+Technical indicators
+Strategy engine
+Risk Management
+Order execution
+
+
+
+
+
+
+
+
