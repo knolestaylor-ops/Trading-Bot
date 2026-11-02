@@ -10,7 +10,7 @@ Risk Management
 Order execution
 
 
-
+![img.png](img.png)
 
 
 
