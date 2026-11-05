@@ -45,6 +45,9 @@ class MarketDataFrame:
     def df_width(self):
         return self.df.width
 
+    def get_schema(self):
+        return self.schema
+
     def get_latest_bar(self):
         return self.df.tail(1)
 
