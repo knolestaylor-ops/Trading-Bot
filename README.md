@@ -10,7 +10,41 @@ Risk Management
 Order execution
 
 
-![img.png](img.png)
+```mermaid
+flowchart TD
+
+    A[Alpaca Client] --> B[Market Data Fetcher]
+    B --> C[Bar Validation]
+
+    C --> D[Trading DataFrame]
+
+    D --> E[Indicator Engine]
+
+    E --> F[SMA 20]
+    E --> G[SMA 50]
+    E --> H[SMA 200]
+
+    F --> I[Feature Store]
+    G --> I
+    H --> I
+
+    D --> I
+
+    I --> J[Target Generator]
+
+    J --> K[Training Dataset]
+
+    K --> L[ML Model]
+    L --> M[Predictions]
+
+    M --> N[Strategy Engine]
+
+    N --> O[Risk Management]
+
+    O --> P[Order Manager]
+
+    P --> Q[Alpaca Trading API]
+```
 
 
 

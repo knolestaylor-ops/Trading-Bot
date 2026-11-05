@@ -1,5 +1,6 @@
 import os
 import logging
+import pathlib
 from logging.handlers import RotatingFileHandler
 
 class Logger:
@@ -8,6 +9,7 @@ class Logger:
         os.makedirs(log_dir, exist_ok=True)
 
         log_path = os.path.join(log_dir, f"{name}.log")
+        log_path = pathlib.Path(log_dir) / f"{name}.log"
 
         self.logger = logging.getLogger(name)
         self.logger.setLevel(level)
