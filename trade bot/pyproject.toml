@@ -1,0 +1,8 @@
+[tool.pytest.ini_options]
+minversion = "8.0"
+# `src` holds the application packages; `testsuite/tests` holds the shared `support` helpers.
+pythonpath = ["src", "testsuite/tests"]
+testpaths = ["testsuite/tests"]
+# Known bugs are marked xfail. Strict mode turns an xfail that starts passing into a
+# failure, so the marker has to be removed when the bug is fixed.
+xfail_strict = true
