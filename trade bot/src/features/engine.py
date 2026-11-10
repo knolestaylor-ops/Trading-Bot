@@ -1,14 +1,17 @@
-# SMA, EMA, RSI, MAC, ATR, etc.
-from features.indicators.sma import SMAIndicator
-
 
 class IndicatorEngine:
     def __init__(self):
-        pass
+        self.indicators = []
+
+    def add_indicator(self, indicator):
+        self.indicators.append(indicator)
 
     def apply(self, df):
-        return df.with_columns(
-            SMAIndicator(20).calculate(),
-            SMAIndicator(50).calculate(),
-            SMAIndicator(100).calculate()
-        )
+
+        columns =  []
+
+        for indicator in self.indicators:
+            # indicator needs to have a calculate method
+            columns.append(indicator.calculate(df))
+
+        return df.with_columns(columns)
