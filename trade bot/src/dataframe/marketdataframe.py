@@ -1,23 +1,5 @@
 import polars as pl
 
-bar = {
-    "timestamp": "2024-01-01T09:30:00Z",
-    "open": 1.0,
-    "high": 1.0,
-    "low": 9.0,
-    "close": 1.0,
-    "volume": 12.0,
-}
-
-bar1 = {
-    "timestamp": "2024-02-01T09:30:00Z",
-    "open": 100.0,
-    "high": 101.0,
-    "low": 99.5,
-    "close": 100.7,
-    "volume": 12000.0,
-}
-
 class MarketDataFrame:
     def __init__(self):
         self.schema =  {
@@ -158,10 +140,3 @@ class MarketDataFrame:
             "volume": volume
         }
 
-
-
-dataframe = MarketDataFrame()
-print(dataframe.append_bar(bar))
-print(dataframe.append_bar(bar1))
-print(dataframe.df)
-print(dataframe.current_timestamp())

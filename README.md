@@ -20,9 +20,9 @@ flowchart TD
 
     D --> E[Indicator Engine]
 
-    E --> F[SMA 20]
-    E --> G[SMA 50]
-    E --> H[SMA 200]
+    E --> F[SMA]
+    E --> G[Golden Cross]
+    E --> H[Triple SMA]
 
     F --> I[Feature Store]
     G --> I
