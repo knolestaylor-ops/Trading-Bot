@@ -3,7 +3,7 @@ import polars as pl
 class TargetGenerator:
 
     def generate(self, df):
-        return df.with_columns(
+        return (
             (pl.col("close").shift(-1) >
             pl.col("close")
              )
