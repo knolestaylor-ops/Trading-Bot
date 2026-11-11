@@ -1,7 +1,7 @@
 """TargetGenerator: label = 1 when the next close is higher than the current close."""
 import polars as pl
 
-from models.target_generator import TargetGenerator
+from features.target_generator import TargetGenerator
 
 
 def generate(closes, **extra_columns):
