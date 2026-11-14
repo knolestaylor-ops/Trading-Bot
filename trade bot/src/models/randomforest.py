@@ -1,4 +1,3 @@
-
 from models.base import BaseModel
 from sklearn.ensemble import RandomForestClassifier
 
